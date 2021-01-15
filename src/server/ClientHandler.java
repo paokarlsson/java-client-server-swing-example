@@ -8,12 +8,10 @@ import java.net.URL;
 
 public class ClientHandler extends Thread {
     private final Socket socket;
-    private final String address;
 
     public ClientHandler(Socket socket) {
         this.socket = socket;
-        this.address =
-                socket.getInetAddress().getHostAddress() + ":" + socket.getPort();
+
     }
 
     @Override
@@ -21,7 +19,7 @@ public class ClientHandler extends Thread {
         try (
                 ObjectOutputStream objectWriter = new ObjectOutputStream(socket.getOutputStream());
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))
         ) {
             String text = reader.readLine();
             System.out.println("Client sends command: " + text);
@@ -41,7 +39,7 @@ public class ClientHandler extends Thread {
                     writer.flush();
                 }
             }
-            System.out.println("Client disconnects");
+            System.out.println("Client disconnect");
         } catch (IOException e) {
             System.err.println(e.getMessage());
         }
