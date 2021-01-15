@@ -5,9 +5,13 @@ import car.CarFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.*;
+import java.net.Socket;
+import java.rmi.ServerError;
 
 public class GUI extends JFrame {
     private Car car;
+    private String regnrString;
     JMenuBar menu = new JMenuBar();
     JMenu regnr = new JMenu("Regnr");
     JMenuItem search = new JMenuItem("Search...");
@@ -28,7 +32,7 @@ public class GUI extends JFrame {
         this.regnrText.setText(car.getRegnr());
         this.brandText.setText(car.getBrand());
         this.modelText.setText(car.getModel());
-        this.yearText.setText((car.getYear() == -1)?"":Integer.toString(car.getYear()));
+        this.yearText.setText((car.getYear() == -1) ? "" : Integer.toString(car.getYear()));
 
         setLayout(new BorderLayout());
         setSize(600, 200);
@@ -36,17 +40,14 @@ public class GUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         search.addActionListener(a -> {
-            String searchTerm = JOptionPane.showInputDialog("Please enter the registration number to search for:");
-            if (searchTerm != null && searchTerm.length() == 6) {
-                this.car = new Car(CarFactory.create(searchTerm));
-                System.out.println(this.car.toString());
-            } else if(searchTerm.length() != 6) {
-                JOptionPane.showMessageDialog(null,"The registration number can only be the length of 6");
+            regnrString = JOptionPane.showInputDialog("Please enter the registration number to search for:");
+            if (regnrString != null && regnrString.length() == 6) {
+                Worker worker = new Worker();
+                worker.execute();
+            } else if (regnrString.length() != 6) {
+                JOptionPane.showMessageDialog(null, "The registration number can only be the length of 6");
             }
-            this.regnrText.setText(this.car.getRegnr());
-            this.brandText.setText(this.car.getBrand());
-            this.modelText.setText(this.car.getModel());
-            this.yearText.setText(Integer.toString(this.car.getYear()));
+
         });
         regnr.add(search);
         menu.add(regnr);
@@ -74,5 +75,47 @@ public class GUI extends JFrame {
 
         panel.add(textField, BorderLayout.CENTER);
         return panel;
+    }
+
+    public class Worker extends SwingWorker<Car, Void> {
+        @Override
+        protected Car doInBackground() {
+            try (
+                    Socket socket = new Socket("localhost", 10000);
+                    ObjectInputStream objectReader = new ObjectInputStream(socket.getInputStream());
+                    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            ) {
+                writer.write("regnr");
+                writer.newLine();
+                writer.flush();
+                writer.write(regnrString);
+                writer.newLine();
+                writer.flush();
+                if (reader.readLine().equals("car")) {
+                    return (Car) objectReader.readObject();
+                }
+
+            } catch (IOException | ClassNotFoundException e) {
+                System.err.println(e.getMessage());
+            }
+            return null;
+        }
+
+        @Override
+        protected void done() {
+            try {
+                Car content = get();
+                car = new Car(content);
+                regnrText.setText(car.getRegnr());
+                brandText.setText(car.getBrand());
+                modelText.setText(car.getModel());
+                yearText.setText((car.getYear() == -1) ? "" : Integer.toString(car.getYear()));
+            } catch (Exception e) {
+                System.err.println(e.getMessage());
+            }
+        }
+
     }
 }
