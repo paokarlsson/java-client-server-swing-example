@@ -12,6 +12,12 @@ public class Car {
         this.model = "";
         this.year = -1;
     }
+    public Car(Car car) {
+        this.regnr = car.getRegnr();
+        this.brand = car.getBrand();
+        this.model = car.getModel();
+        this.year = car.getYear();
+    }
 
     public Car(String regnr, String brand, String model, int year) {
         this.regnr = regnr;
