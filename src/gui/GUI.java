@@ -1,13 +1,13 @@
 package gui;
 
 import car.Car;
-import car.CarFactory;
 
 import javax.swing.*;
 import java.awt.*;
 import java.io.*;
+import java.net.ConnectException;
 import java.net.Socket;
-import java.rmi.ServerError;
+import java.util.Arrays;
 
 public class GUI extends JFrame {
     private Car car;
@@ -37,13 +37,17 @@ public class GUI extends JFrame {
         setLayout(new BorderLayout());
         setSize(600, 200);
         setTitle("Car info");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         search.addActionListener(a -> {
             regnrString = JOptionPane.showInputDialog("Please enter the registration number to search for:");
             if (regnrString != null && regnrString.length() == 6) {
-                Worker worker = new Worker();
-                worker.execute();
+                try {
+                    Worker worker = new Worker();
+                    worker.execute();
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(null, e.getMessage());
+                }
             } else if (regnrString.length() != 6) {
                 JOptionPane.showMessageDialog(null, "The registration number can only be the length of 6");
             }
@@ -79,14 +83,14 @@ public class GUI extends JFrame {
 
     public class Worker extends SwingWorker<Car, Void> {
         @Override
-        protected Car doInBackground() {
+        protected Car doInBackground() throws ConnectException {
             try (
                     Socket socket = new Socket("localhost", 10000);
                     ObjectInputStream objectReader = new ObjectInputStream(socket.getInputStream());
                     BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                     BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-
             ) {
+                socket.setSoTimeout(10000);
                 writer.write("regnr");
                 writer.newLine();
                 writer.flush();
@@ -97,6 +101,8 @@ public class GUI extends JFrame {
                     return (Car) objectReader.readObject();
                 }
 
+            } catch (ConnectException e) {
+                throw new ConnectException("Unable to connect to server");
             } catch (IOException | ClassNotFoundException e) {
                 System.err.println(e.getMessage());
             }
@@ -113,6 +119,9 @@ public class GUI extends JFrame {
                 modelText.setText(car.getModel());
                 yearText.setText((car.getYear() == -1) ? "" : Integer.toString(car.getYear()));
             } catch (Exception e) {
+                if (e.getMessage().contains("Unable to connect to server")) {
+                    JOptionPane.showMessageDialog(null, e.getMessage().substring(27));
+                }
                 System.err.println(e.getMessage());
             }
         }

@@ -4,12 +4,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class CarFactory {
-    private final static String[] carBrands = {"Alfa Romeo", "Audi", "BMW", "Chevrolet",
+    private static final String[] carBrands = {"Alfa Romeo", "Audi", "BMW", "Chevrolet",
             "Citroen", "Fiat", "Ford", "Honda", "Mazda", "Mercedes-Benz",
             "Mitsubishi", "Opel", "Peugeot", "Renault", "Saab", "Skoda",
             "Subaru", "Toyota", "Volkswagen", "Volvo"};
 
-    private final static String[][] carModels = {
+    private static final String[][] carModels = {
             {"MiTo", "Giulietta", "4C", "Giulia"},
             {"A1", "A3", "A5", "A6", "A7", "A8", "TT", "R8", "Q3"},
             {"316i", "328i xDrive", "330d", "523i", "550i", "535d", "730Li", "750i/Li xDrive", "xDrive20i", "Z4 GTE"},
@@ -32,7 +32,8 @@ public class CarFactory {
             {"V40", "S60", "XC90", "V70", "S80", "XC70", "V50"}
     };
 
-    private final static int[] years = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012,
+    private static final int[] years = {2000, 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011,
+            2012,
             2013, 2014, 2015, 206, 2017, 2018, 2019, 2020, 2021};
 
     public static Car create(String regnr) {
@@ -55,18 +56,21 @@ public class CarFactory {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] array = md.digest(s.getBytes());
-            StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < array.length; ++i) {
-                sb.append(Integer.toHexString((array[i] & 0xFF) | 0x100).substring(1,3));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : array) {
+                sb.append(Integer.toHexString((b & 0xFF) | 0x100).substring(1, 3));
             }
             return sb.toString();
         } catch (NoSuchAlgorithmException e) {
+            System.err.println(e.getMessage());
         }
-        return null;
+        return "";
     }
-
 
     private static int hexToDec(String hex) {
         return Integer.parseInt(hex, 16);
     }
+
+    private CarFactory(){}
+
 }
